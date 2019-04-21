@@ -1,7 +1,6 @@
-import tkinter as tk
-from tkinter import font as tkfont
 import random
 import time
+import tkinter as tk
 
 
 class Application(tk.Tk):
@@ -23,15 +22,27 @@ class Application(tk.Tk):
         frame.grid(row=0, column=0, sticky='nsew')
         self.frames.append(frame)
 
+        level = ['易しい', '難しい']
+        moji = ['ひらがな', '漢字']
+
         # 問題のページ
-        frame = QuestionPage(
-            parent=container, controller=self, next_frame=self.frames[-1])
-        frame.grid(row=0, column=0, sticky='nsew')
-        self.frames.append(frame)
+        # 色を答える 易しい 難しい
+        for i in range(2):
+            frame = QuestionPage(parent=container, controller=self,
+                                 next_frame=self.frames[0], level=level[i], moji=moji[0])
+            frame.grid(row=0, column=0, sticky='nsew')
+            self.frames.append(frame)
+
+        # 文字と色を答える 易しいor難しい ひらがなor漢字
+        for i in range(4):
+            frame = QuestionPage2(parent=container, controller=self,
+                                  next_frame=self.frames[0], level=level[i % 2], moji=moji[i // 2])
+            frame.grid(row=0, column=0, sticky='nsew')
+            self.frames.append(frame)
 
         # はじめのページ
         frame = StartPage(parent=container, controller=self,
-                          next_frame=self.frames[-1])
+                          frames=self.frames)
         frame.grid(row=0, column=0, sticky='nsew')
         self.frames.append(frame)
 
@@ -61,15 +72,21 @@ class ResultPage(tk.Frame):
 
 
 class QuestionPage(tk.Frame):
-    COLOR = ['あか', 'あお', 'みどり', 'きいろ']
-    COLOR_CODE = {'あか': '#f80d00', 'あお': '#1f05f8',
-                  'きいろ': '#fcde01', 'みどり': '#36dc21'}
+    NUM = [0, 1, 2, 3]
+    # COLOR = ['あか', 'あお', 'みどり', 'きいろ']
+    COLOR_CODE = ['#f80d00', '#00bfff', '#36dc21', '#fcde01']
+    ACTIVE_COLOR_CODE = ['#ff635b', '#66d8ff', '#83e976', '#fee961']
     QUESTIONS = 5
 
-    def __init__(self, parent, controller, next_frame):
+    def __init__(self, parent, controller, next_frame, level, moji):
         tk.Frame.__init__(self, parent)
         self.controller = controller
         self.next_frame = next_frame
+        self.level = level
+        if moji == 'ひらがな':
+            self.COLOR = ['あか', 'あお', 'みどり', 'きいろ']
+        else:
+            self.COLOR = ['赤', '青', '緑', '黃']
 
         self.select_color()
         self.questions_num = 0
@@ -79,43 +96,186 @@ class QuestionPage(tk.Frame):
 
     def select_color(self):
         # 問題の文字と色，選択肢の順番を決める
+        num = [0, 1, 2, 3]
         self.choices_color = random.sample(self.COLOR, len(self.COLOR))
-        self.question_char = self.COLOR[random.randint(
-            0, len(self.choices_color)-1)]
-        self.answer_color = self.choices_color[random.randint(
-            0, len(self.choices_color)-1)]
+        self.question_char = random.randint(0, len(self.choices_color) - 1)
+        self.answer_color = random.randint(0, len(self.choices_color) - 1)
+        self.choices_bg = random.sample(num, len(num))
 
     def create_button(self):
+        self.question_pre = tk.Label(self)
+        self.question_pre['text'] = '色を答えてください'
+        # question['font'] = self.controller.font
+        self.question_pre.grid(row=0, column=0, columnspan=2, sticky='nsew')
+
         self.question = tk.Label(self)
-        self.question['text'] = self.question_char
+        self.question['text'] = self.COLOR[self.question_char]
         self.question['fg'] = self.COLOR_CODE[self.answer_color]
         self.question['bg'] = 'white'
-        #question['font'] = self.controller.font
-        self.question.grid(row=0, column=0, columnspan=2, sticky='nsew')
+        # question['font'] = self.controller.font
+        self.question.grid(row=1, column=0, columnspan=2, sticky='nsew')
 
-        button_row = [1, 1, 2, 2]
+        button_row = [2, 2, 3, 3]
         button_col = [0, 1, 0, 1]
         self.choices = []
-        for i in range(len(self.choices_color)):
-            choice = tk.Button(self)
-            choice['text'] = self.choices_color[i]
-            choice['width'] = 10
-            choice.bind('<1>', self.check_ans)
-            choice.grid(row=button_row[i], column=button_col[i], sticky='nsew')
-            self.choices.append(choice)
+        if self.level == '易しい':
+            for i in range(len(self.choices_color)):
+                choice = tk.Button(self)
+                choice['text'] = self.choices_color[i]
+                choice['width'] = 10
+                choice.bind('<1>', self.check_ans)
+                choice.grid(row=button_row[i],
+                            column=button_col[i], sticky='nsew')
+                self.choices.append(choice)
+        else:
+            for i in range(len(self.choices_color)):
+                choice = tk.Button(self)
+                choice['text'] = self.choices_color[i]
+                choice['width'] = 10
+                choice['fg'] = 'white'
+                choice['activeforeground'] = 'white'
+                choice['bg'] = self.COLOR_CODE[self.choices_bg[i]]
+                choice['activebackground'] = self.ACTIVE_COLOR_CODE[self.choices_bg[i]]
+                choice.bind('<1>', self.check_ans)
+                choice.grid(row=button_row[i],
+                            column=button_col[i], sticky='nsew')
+                self.choices.append(choice)
 
     def check_ans(self, event):
         choice = event.widget['text']
-        if choice == self.answer_color:
+        if choice == self.COLOR[self.answer_color]:
             self.correct_answers += 1
 
         self.select_color()
+        self.question['text'] = self.COLOR[self.question_char]
+        self.question['fg'] = self.COLOR_CODE[self.answer_color]
         for i in range(len(self.choices_color)):
-            self.question['text'] = self.question_char
-            self.question['fg'] = self.COLOR_CODE[self.answer_color]
             self.choices[i]['text'] = self.choices_color[i]
+        if self.level == '難しい':
+            for i in range(len(self.choices_color)):
+                self.choices[i]['bg'] = self.COLOR_CODE[self.choices_bg[i]]
+                self.choices[i]['activebackground'] = self.ACTIVE_COLOR_CODE[self.choices_bg[i]]
 
-        if self.questions_num < self.QUESTIONS-1:
+        if self.questions_num < self.QUESTIONS - 1:
+            self.questions_num += 1
+        else:
+            self.questions_num = 0
+            self.controller.frames[0].label['text'] = f'正解数: {self.correct_answers}/{self.QUESTIONS}'
+            self.correct_answers = 0
+
+            # かかった時間
+            elasped_time = time.time() - self.controller.frames[-1].start_time
+            m, s = divmod(int(elasped_time), 60)
+            if m > 0:
+                self.controller.frames[0].time_label['text'] = f'TIME: {m}分{s}秒'
+            else:
+                self.controller.frames[0].time_label['text'] = f'TIME: {s}秒'
+
+            # 結果の表示
+            self.next_frame.tkraise()
+
+
+class QuestionPage2(tk.Frame):
+    NUM = [0, 1, 2, 3]
+    # COLOR = ['あか', 'あお', 'みどり', 'きいろ']
+    COLOR_CODE = ['#f80d00', '#00bfff', '#36dc21', '#fcde01']
+    ACTIVE_COLOR_CODE = ['#ff635b', '#66d8ff', '#83e976', '#fee961']
+    QUESTIONS = 5
+
+    def __init__(self, parent, controller, next_frame, level, moji):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+        self.next_frame = next_frame
+        self.level = level
+        if moji == 'ひらがな':
+            self.COLOR = ['あか', 'あお', 'みどり', 'きいろ']
+        else:
+            self.COLOR = ['赤', '青', '緑', '黃']
+
+        self.select_color()
+        self.questions_num = 0
+        self.correct_answers = 0
+        # ボタンを作る
+        self.create_button()
+
+    def select_color(self):
+        # 問題の文字と色，選択肢の順番を決める
+        num = [0, 1, 2, 3]
+        self.choices_color = random.sample(self.COLOR, len(self.COLOR))
+        self.question_char = random.randint(0, len(self.choices_color) - 1)
+        self.answer_color = random.randint(0, len(self.choices_color) - 1)
+        self.choices_bg = random.sample(num, len(num))
+        # 0なら色を答える 1なら文字を答える
+        self.color_or_moji = random.randint(0, 1)
+
+    def create_button(self):
+        self.question_pre = tk.Label(self)
+        if self.color_or_moji == 0:
+            self.question_pre['text'] = '色を答える'
+        else:
+            self.question_pre['text'] = '文字を答える'
+        # question['font'] = self.controller.font
+        self.question_pre.grid(row=0, column=0, columnspan=2, sticky='nsew')
+
+        self.question = tk.Label(self)
+        self.question['text'] = self.COLOR[self.question_char]
+        self.question['fg'] = self.COLOR_CODE[self.answer_color]
+        self.question['bg'] = 'white'
+        # question['font'] = self.controller.font
+        self.question.grid(row=1, column=0, columnspan=2, sticky='nsew')
+
+        button_row = [2, 2, 3, 3]
+        button_col = [0, 1, 0, 1]
+        self.choices = []
+        if self.level == '易しい':
+            for i in range(len(self.choices_color)):
+                choice = tk.Button(self)
+                choice['text'] = self.choices_color[i]
+                choice['width'] = 10
+                choice.bind('<1>', self.check_ans)
+                choice.grid(row=button_row[i],
+                            column=button_col[i], sticky='nsew')
+                self.choices.append(choice)
+        else:
+            for i in range(len(self.choices_color)):
+                choice = tk.Button(self)
+                choice['text'] = self.choices_color[i]
+                choice['width'] = 10
+                choice['fg'] = 'white'
+                choice['activeforeground'] = 'white'
+                choice['bg'] = self.COLOR_CODE[self.choices_bg[i]]
+                choice['activebackground'] = self.ACTIVE_COLOR_CODE[self.choices_bg[i]]
+                choice.bind('<1>', self.check_ans)
+                choice.grid(row=button_row[i],
+                            column=button_col[i], sticky='nsew')
+                self.choices.append(choice)
+
+    def check_ans(self, event):
+        # 正解を判定する
+        choice = event.widget['text']
+        if self.color_or_moji == 0:  # 色の場合
+            if choice == self.COLOR[self.answer_color]:
+                self.correct_answers += 1
+        else:  # 文字の場合
+            if choice == self.COLOR[self.question_char]:
+                self.correct_answers += 1
+
+        # 問題の更新
+        self.select_color()
+        if self.color_or_moji == 0:
+            self.question_pre['text'] = '色を答える'
+        else:
+            self.question_pre['text'] = '文字を答える'
+        self.question['text'] = self.COLOR[self.question_char]
+        self.question['fg'] = self.COLOR_CODE[self.answer_color]
+        for i in range(len(self.choices_color)):
+            self.choices[i]['text'] = self.choices_color[i]
+        if self.level == '難しい':
+            for i in range(len(self.choices_color)):
+                self.choices[i]['bg'] = self.COLOR_CODE[self.choices_bg[i]]
+                self.choices[i]['activebackground'] = self.ACTIVE_COLOR_CODE[self.choices_bg[i]]
+
+        if self.questions_num < self.QUESTIONS - 1:
             self.questions_num += 1
         else:
             self.questions_num = 0
@@ -135,20 +295,31 @@ class QuestionPage(tk.Frame):
 
 
 class StartPage(tk.Frame):
-    def __init__(self, parent, controller, next_frame):
+    def __init__(self, parent, controller, frames):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        self.next_frame = next_frame
+        self.frames = frames
         self.start_time = 0.0
 
-        label = tk.Label(self, text='文字の色を当ててくだい')
-        label.pack(side='top', fill='x', pady=10)
-        button = tk.Button(self, text='スタート', command=self.raise_next_frame)
-        button.pack(fill='x')
+        self.t = [
+            '色を答える\n易しい',
+            '色を答える\n難しい',
+            '文字と色を答える\n易しい',
+            '文字と色を答える\n難しい',
+            '文字と色を答える\n易しい 漢字',
+            '文字と色を答える\n難しい 漢字'
+        ]
 
-    def raise_next_frame(self):
+        for i in range(len(self.t)):
+            button = tk.Button(self, text=self.t[i], font=("", 50))
+            button.bind('<1>', self.raise_next_frame)
+            button.grid(row=i // 2, column=i % 2, sticky='nsew')
+
+    def raise_next_frame(self, event):
         self.start_time = time.time()
-        self.next_frame.tkraise()
+        event_text = event.widget['text']
+        next_frame = self.frames[self.t.index(event_text) + 1]
+        next_frame.tkraise()
 
 
 if __name__ == '__main__':
