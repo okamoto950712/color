@@ -87,6 +87,7 @@ class QuestionPage(tk.Frame):
             self.COLOR = ['あか', 'あお', 'みどり', 'きいろ']
         else:
             self.COLOR = ['赤', '青', '緑', '黃']
+        self.COLOR_CHOICES = ['あか', 'あお', 'みどり', 'きいろ']
 
         self.select_color()
         self.questions_num = 0
@@ -97,9 +98,11 @@ class QuestionPage(tk.Frame):
     def select_color(self):
         # 問題の文字と色，選択肢の順番を決める
         num = [0, 1, 2, 3]
-        self.choices_color = random.sample(self.COLOR, len(self.COLOR))
-        self.question_char = random.randint(0, len(self.choices_color) - 1)
-        self.answer_color = random.randint(0, len(self.choices_color) - 1)
+        self.choices_color = random.sample(self.COLOR_CHOICES, len(self.COLOR))
+        temp_num = list(range(0, len(self.choices_color)))
+        self.question_char = random.choice(temp_num)
+        del temp_num[self.question_char]
+        self.answer_color = random.choice(temp_num)
         self.choices_bg = random.sample(num, len(num))
 
     def create_button(self):
@@ -143,7 +146,7 @@ class QuestionPage(tk.Frame):
 
     def check_ans(self, event):
         choice = event.widget['text']
-        if choice == self.COLOR[self.answer_color]:
+        if choice == self.COLOR_CHOICES[self.answer_color]:
             self.correct_answers += 1
 
         self.select_color()
@@ -160,16 +163,19 @@ class QuestionPage(tk.Frame):
             self.questions_num += 1
         else:
             self.questions_num = 0
-            self.controller.frames[0].label['text'] = f'正解数: {self.correct_answers}/{self.QUESTIONS}'
+            self.controller.frames[0].label['text'] = '正解数: {}/{}'.format(
+                self.correct_answers, self.QUESTIONS)
             self.correct_answers = 0
 
             # かかった時間
             elasped_time = time.time() - self.controller.frames[-1].start_time
             m, s = divmod(int(elasped_time), 60)
             if m > 0:
-                self.controller.frames[0].time_label['text'] = f'TIME: {m}分{s}秒'
+                self.controller.frames[0].time_label['text'] = 'TIME: {}分{}秒'.format(
+                    m, s)
             else:
-                self.controller.frames[0].time_label['text'] = f'TIME: {s}秒'
+                self.controller.frames[0].time_label['text'] = 'TIME: {}秒'.format(
+                    s)
 
             # 結果の表示
             self.next_frame.tkraise()
@@ -191,6 +197,7 @@ class QuestionPage2(tk.Frame):
             self.COLOR = ['あか', 'あお', 'みどり', 'きいろ']
         else:
             self.COLOR = ['赤', '青', '緑', '黃']
+        self.COLOR_CHOICES = ['あか', 'あお', 'みどり', 'きいろ']
 
         self.select_color()
         self.questions_num = 0
@@ -201,9 +208,11 @@ class QuestionPage2(tk.Frame):
     def select_color(self):
         # 問題の文字と色，選択肢の順番を決める
         num = [0, 1, 2, 3]
-        self.choices_color = random.sample(self.COLOR, len(self.COLOR))
-        self.question_char = random.randint(0, len(self.choices_color) - 1)
-        self.answer_color = random.randint(0, len(self.choices_color) - 1)
+        self.choices_color = random.sample(self.COLOR_CHOICES, len(self.COLOR))
+        temp_num = list(range(0, len(self.choices_color)))
+        self.question_char = random.choice(temp_num)
+        del temp_num[self.question_char]
+        self.answer_color = random.choice(temp_num)
         self.choices_bg = random.sample(num, len(num))
         # 0なら色を答える 1なら文字を答える
         self.color_or_moji = random.randint(0, 1)
@@ -254,10 +263,10 @@ class QuestionPage2(tk.Frame):
         # 正解を判定する
         choice = event.widget['text']
         if self.color_or_moji == 0:  # 色の場合
-            if choice == self.COLOR[self.answer_color]:
+            if choice == self.COLOR_CHOICES[self.answer_color]:
                 self.correct_answers += 1
         else:  # 文字の場合
-            if choice == self.COLOR[self.question_char]:
+            if choice == self.COLOR_CHOICES[self.question_char]:
                 self.correct_answers += 1
 
         # 問題の更新
@@ -279,16 +288,19 @@ class QuestionPage2(tk.Frame):
             self.questions_num += 1
         else:
             self.questions_num = 0
-            self.controller.frames[0].label['text'] = f'正解数: {self.correct_answers}/{self.QUESTIONS}'
+            self.controller.frames[0].label['text'] = '正解数: {}/{}'.format(
+                self.correct_answers, self.QUESTIONS)
             self.correct_answers = 0
 
             # かかった時間
             elasped_time = time.time() - self.controller.frames[-1].start_time
             m, s = divmod(int(elasped_time), 60)
             if m > 0:
-                self.controller.frames[0].time_label['text'] = f'TIME: {m}分{s}秒'
+                self.controller.frames[0].time_label['text'] = 'TIME: {}分{}秒'.format(
+                    m, s)
             else:
-                self.controller.frames[0].time_label['text'] = f'TIME: {s}秒'
+                self.controller.frames[0].time_label['text'] = 'TIME: {}秒'.format(
+                    s)
 
             # 結果の表示
             self.next_frame.tkraise()
